@@ -1,0 +1,64 @@
+
+$ docker build -t static-nginx .
+Sending build context to Docker daemon  3.584kB
+Step 1/4 : FROM nginx
+ ---> 1e5ab59102ce
+Step 2/4 : COPY static-html-directory /usr/share/nginx/html
+ ---> dc9dd2d1c359
+Step 3/4 : COPY Dockerfile /Dockerfile.me
+ ---> cbe492605d2e
+Step 4/4 : COPY static-html-directory /static-html-directory
+ ---> 62bb757fce49
+Successfully built 62bb757fce49
+Successfully tagged static-nginx:latest
+
+$ docker images
+REPOSITORY                   TAG                 IMAGE ID            CREATED             SIZE
+static-nginx                 latest              62bb757fce49        10 seconds ago      108MB
+
+$ docker run --name static-nginx -d -p 80:80 static-nginx
+0970418fb07d760cd47ac7d2aa9e455823352b732df8089accf6da464e8781a0
+
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                NAMES
+0970418fb07d        static-nginx        "nginx -g 'daemon ..."   48 seconds ago      Up 47 seconds       0.0.0.0:80->80/tcp   static-nginx
+
+$ docker ps --no-trunc
+CONTAINER ID                                                       IMAGE               COMMAND                    CREATED              STATUS              PORTS                NAMES
+0970418fb07d760cd47ac7d2aa9e455823352b732df8089accf6da464e8781a0   static-nginx        "nginx -g 'daemon off;'"   About a minute ago   Up About a minute   0.0.0.0:80->80/tcp   static-nginx
+
+$ lynx -dump localhost
+Hello from docker-nginx static-html-directory index.html
+
++++
+
+## To enter the container
+
+$ docker exec -t -i static-nginx /bin/bash
+root@39b99b92deda:/# ls -ltFr
+-rw-rw-r--   1 root root  145 Oct 18 09:19 Dockerfile.me
+drwxr-xr-x   2 root root 4096 Oct 18 09:26 static-html-directory/
+drwxr-xr-x   1 root root 4096 Oct 18 09:44 etc/
+
++++
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
