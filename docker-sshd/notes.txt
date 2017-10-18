@@ -76,6 +76,66 @@ Welcome to Ubuntu 16.04.3 LTS (GNU/Linux 4.11.0-1013-azure x86_64)
 
 +++
 
+$ cat Dockerfile
+FROM ubuntu:16.04
+
+# RUN apt-get update && apt-get install -y openssh-server
+
+RUN apt-get update && apt-get install -y \
+        openssh-server \
+        sudo \
+        tree \
+        lynx \
+        vim \
+        git \
+        ansible \
+&& rm -rf /var/lib/apt/lists/*
+
+COPY Dockerfile /Dockerfile.me
+
+RUN mkdir /var/run/sshd
+RUN echo 'root:root' | chpasswd
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+RUN ln -sf /bin/bash /bin/sh
+
+RUN useradd -m ec2-user && echo "ec2-user:ec2-user" | chpasswd
+RUN echo >> /etc/sudoers
+RUN echo "ec2-user  ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN echo >> /etc/sudoers
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
+
+
+$ docker build -t ubuntu-sshd .
+
+$ docker images
+REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE
+ubuntu-sshd                        latest              3b9d38aad18d        7 minutes ago       337MB
+
+$ docker run -d -P --name ubuntu-sshd ubuntu-sshd
+
+$ docker ps -a
+CONTAINER ID        IMAGE               COMMAND               CREATED             STATUS              PORTS                   NAMES
+e9890874b8f3        ubuntu-sshd         "/usr/sbin/sshd -D"   54 seconds ago      Up 53 seconds       0.0.0.0:32776->22/tcp   ubuntu-sshd
+
+$ docker port ubuntu-sshd 22
+0.0.0.0:32777
+
+$ ssh root@172.17.0.1 -p 32777
+
+$ docker exec -it ubuntu-sshd /bin/bash
+root@e9890874b8f3:/# ls
+Dockerfile.me  bin  boot  dev  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+
++++
 
 
 
