@@ -1,0 +1,105 @@
+
+$ cat Dockerfile
+FROM ubuntu:16.04
+
+RUN apt-get update && apt-get install -y openssh-server
+RUN mkdir /var/run/sshd
+RUN echo 'root:root' | chpasswd
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
+
++++
+
+$ docker build -t ubuntu-sshd .
+
+$ docker run -d -P --name ubuntu-sshd ubuntu-sshd
+b57562c1ce88c9da756a302a2830da369f77b66d57d7628e0802dfc2529b7f44
+
+##   -P, --publish-all                    Publish all exposed ports to random ports
+
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND               CREATED             STATUS              PORTS                   NAMES
+b57562c1ce88        ubuntu-sshd         "/usr/sbin/sshd -D"   8 seconds ago       Up 6 seconds        0.0.0.0:32768->22/tcp   ubuntu-sshd
+
+$ docker port ubuntu-sshd 22
+0.0.0.0:32768
+
+## List port mappings or a specific mapping for the container
+
+$ ifconfig
+docker0   Link encap:Ethernet  HWaddr 02:42:28:8e:58:48
+          inet addr:172.17.0.1  Bcast:0.0.0.0  Mask:255.255.0.0
+          inet6 addr: fe80::42:28ff:fe8e:5848/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:567 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:983 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:43714 (43.7 KB)  TX bytes:35032965 (35.0 MB)
+
+eth0      Link encap:Ethernet  HWaddr 00:0d:3a:12:62:b2
+          inet addr:10.0.0.4  Bcast:10.0.0.255  Mask:255.255.255.0
+          inet6 addr: fe80::20d:3aff:fe12:62b2/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:669898 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:35689 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:981942324 (981.9 MB)  TX bytes:4174154 (4.1 MB)
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:160 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:160 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:11840 (11.8 KB)  TX bytes:11840 (11.8 KB)
+
+veth00a5ee1 Link encap:Ethernet  HWaddr 1e:57:01:8d:e0:ae
+          inet6 addr: fe80::1c57:1ff:fe8d:e0ae/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:12 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:0 (0.0 B)  TX bytes:976 (976.0 B)
+
+$ ssh root@172.17.0.1 -p 32768
+root@172.17.0.1's password:
+Welcome to Ubuntu 16.04.3 LTS (GNU/Linux 4.11.0-1013-azure x86_64)
+
++++
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
