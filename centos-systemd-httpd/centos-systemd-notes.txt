@@ -1,0 +1,97 @@
+
+$ cat Dockerfile
+FROM centos:7
+
+COPY Dockerfile /Dockerfile.me
+
+ENV container docker
+
+RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == \
+systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+rm -f /lib/systemd/system/multi-user.target.wants/*;\
+rm -f /etc/systemd/system/*.wants/*;\
+rm -f /lib/systemd/system/local-fs.target.wants/*; \
+rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+rm -f /lib/systemd/system/basic.target.wants/*;\
+rm -f /lib/systemd/system/anaconda.target.wants/*;
+
+RUN yum -y install httpd; yum clean all; systemctl enable httpd.service
+EXPOSE 80
+
+RUN yum -y install initscripts && yum clean all
+
+VOLUME [ "/sys/fs/cgroup" ]
+CMD ["/usr/sbin/init"]
+
++++
+
+$ docker build -t centos-systemd-httpd .
+
+$ docker images
+REPOSITORY                         TAG                 IMAGE ID            CREATED              SIZE
+centos-systemd-httpd               latest              f348ebf9a890        About a minute ago   274MB
+
+$ docker run --privileged -d --name centos-systemd-httpd -v /sys/fs/cgroup:/sys/fs/cgroup:ro -p 80:80 centos-systemd-httpd
+f0fa0cc865f0c1ac4490834dfb2449df491b1d05483da29e22b06da09e1d2ab2
+
+$ docker ps
+CONTAINER ID        IMAGE                  COMMAND             CREATED              STATUS              PORTS                NAMES
+f0fa0cc865f0        centos-systemd-httpd   "/usr/sbin/init"    About a minute ago   Up About a minute   0.0.0.0:80->80/tcp   centos-systemd-httpd
+
+$ docker exec -t -i centos-systemd-httpd /bin/bash
+
+[root@f0fa0cc865f0 /]# service httpd status
+Redirecting to /bin/systemctl status httpd.service
+● httpd.service - The Apache HTTP Server
+   Loaded: loaded (/usr/lib/systemd/system/httpd.service; enabled; vendor preset: disabled)
+   Active: active (running) since Fri 2017-10-20 17:45:06 UTC; 22s ago
+     Docs: man:httpd(8)
+           man:apachectl(8)
+ Main PID: 145 (httpd)
+   Status: "Total requests: 0; Current requests/sec: 0; Current traffic:   0 B/sec"
+   CGroup: /docker/f0fa0cc865f0c1ac4490834dfb2449df491b1d05483da29e22b06da09e1d2ab2/system.slice/httpd.service
+           ├─145 /usr/sbin/httpd -DFOREGROUND
+           ├─146 /usr/sbin/httpd -DFOREGROUND
+           ├─147 /usr/sbin/httpd -DFOREGROUND
+           ├─148 /usr/sbin/httpd -DFOREGROUND
+           ├─149 /usr/sbin/httpd -DFOREGROUND
+           └─150 /usr/sbin/httpd -DFOREGROUND
+
+Oct 20 17:45:06 f0fa0cc865f0 systemd[1]: Starting The Apache HTTP Server...
+Oct 20 17:45:06 f0fa0cc865f0 httpd[145]: AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the '...is message
+Oct 20 17:45:06 f0fa0cc865f0 systemd[1]: Started The Apache HTTP Server.
+Hint: Some lines were ellipsized, use -l to show in full.
+
++++
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
